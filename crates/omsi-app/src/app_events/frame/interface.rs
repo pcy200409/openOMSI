@@ -290,6 +290,9 @@ impl App {
         menu_lines: Vec<(&'static str, &'static str)>,
         menu_tabs: Option<(Vec<String>, usize)>,
     ) {
+        // (the mouse steering's point, for the cross drawn where the held cursor cannot show it)
+        let steer_at = (self.mouse_steering_now() && matches!(self.input.mouse_grab.mode, Some(crate::app_impl::GrabMode::Locked | crate::app_impl::GrabMode::Warp)))
+            .then(|| self.input.mouse_grab.at.unwrap_or(self.input.cursor));
         let (Some(r), Some(scene)) = (self.renderer.as_ref(), self.scene.as_mut()) else { return };
         if let (Some(ui), Some(s)) = (self.ui.as_mut(), self.gfx.surface.as_ref()) {
             let scale = self.window.as_ref().map(|w| w.scale_factor() as f32).unwrap_or(1.0);
@@ -381,6 +384,7 @@ impl App {
                 // whose header they covered once they stood on the timetable's line)
                 notes: if self.settings.notes && !map_open && self.menus.game_menu.is_none() { notes } else { &[] },
                 fps: self.settings.show_fps.then_some(self.perf.fps),
+                steer_marker: steer_at.map(|(x, y)| ((x - hud[0]).clamp(0.0, w), y.clamp(0.0, h))),
                 paused: self.paused,
                 menu: match chooser_sel {
                     Some(k) => Some((k, &chooser_items[..])),

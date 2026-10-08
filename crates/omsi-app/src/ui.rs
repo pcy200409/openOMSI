@@ -430,6 +430,9 @@ pub struct Frame<'a> {
     pub notes: &'a [String],
     /// The frame rate, top right (the `show_fps` setting).
     pub fps: Option<f32>,
+    /// Where the mouse steers while the cursor is hidden and held (the window's pixels): a
+    /// small cross is drawn there, as the cursor showed it before it was held.
+    pub steer_marker: Option<(f32, f32)>,
     /// The game stands paused.
     pub paused: bool,
     /// The game menu is open, with this line chosen (labels from `GAME_MENU`).
@@ -805,6 +808,17 @@ impl Ui {
             let plate = self.text.plate(r, scene, 7);
             scene.overlays.push((plate, [x - 5.0 * s, 10.0 * s, x + l.w as f32 + 5.0 * s, 10.0 * s + l.h as f32]));
             scene.overlays.push((l.tex, [x, 10.0 * s, x + l.w as f32, 10.0 * s + l.h as f32]));
+        }
+        // the mouse steering's point as a cross: with the cursor held and hidden nothing else
+        // shows where the wheel and the pedals are being pointed
+        if let Some((mx, my)) = f.steer_marker {
+            let (arm, thick, edge) = (9.0 * s, 2.0 * s, 1.0 * s);
+            let dark = self.text.solid(r, scene, [0, 0, 0, 200]);
+            let light = self.text.solid(r, scene, [255, 255, 255, 235]);
+            for (tex, grow) in [(dark, edge), (light, 0.0)] {
+                scene.overlays.push((tex, [mx - arm - grow, my - thick * 0.5 - grow, mx + arm + grow, my + thick * 0.5 + grow]));
+                scene.overlays.push((tex, [mx - thick * 0.5 - grow, my - arm - grow, mx + thick * 0.5 + grow, my + arm + grow]));
+            }
         }
         // --- the information bar, along the top in the middle: in as many rows as the room
         // it has needs
