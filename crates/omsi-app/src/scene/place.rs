@@ -889,16 +889,20 @@ fn object_lights(state: &mut TileState, ot: &ObjectType, pos: DVec3, xf: Mat4, l
         }
         let p = xf.transform_point3(glam::Vec3::from(ml.pos)).as_dvec3() + pos;
         // `[maplight] … radius` is the core the light fills at full colour; it
-        // fades inverse-square beyond and is cut off at six times that. The
-        // colour is the brightness, so the intensity stays at one: an Esso sign
-        // declared as 0.1 red is a glow by its pumps, not a red wash over the
-        // whole street.
+        // fades inverse-square beyond. Keep the smooth cut-off far enough out
+        // that rows of legacy street lamps do not leave black gaps: many OMSI
+        // maps space 3.5--5 m maplights about 30 m apart, where a six-radius
+        // cut-off reached zero exactly between the poles even though the
+        // inverse-square tail should still overlap. The colour is the
+        // brightness, so the intensity stays at one: an Esso sign declared as
+        // 0.1 red is a glow by its pumps, not a red wash over the whole street.
+        let core = ml.radius.max(0.5);
         state.lights.push(omsi_render::PointLight {
             position: p,
-            radius: ml.radius.max(0.5) * 6.0,
+            radius: core * 10.0,
             color: ml.color,
             intensity: 1.0,
-            core: ml.radius.max(0.5),
+            core,
             housed: true,
             shadow_owner: embedded.get(k).copied().unwrap_or(false).then_some(key),
             ..Default::default()
